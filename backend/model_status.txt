@@ -1,0 +1,6 @@
+Attempting to load: model/best_efficientnet.keras
+File exists: True
+Real model loaded successfully!
+Model type: <class 'keras.src.models.functional.Functional'>
+Input shape: (None, 224, 224, 3)
+Output shape: (None, 4)
