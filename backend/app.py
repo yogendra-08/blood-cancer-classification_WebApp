@@ -26,8 +26,9 @@ load_dotenv()
 # Initialize Flask app
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 
-# Enable CORS for all routes
-CORS(app)
+# Enable CORS for all routes with frontend URL
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+CORS(app, resources={r"/api/*": {"origins": [FRONTEND_URL]}})
 
 # Supabase configuration
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://your-project-id.supabase.co")
