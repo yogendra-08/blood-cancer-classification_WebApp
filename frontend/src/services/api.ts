@@ -1,5 +1,5 @@
 // API base URL - update this to match your server
-export const API_BASE_URL = 'http://10.73.212.36:5000';
+export const API_BASE_URL = 'http://localhost:5000';
 
 export interface PredictionResult {
   success: boolean;
@@ -45,6 +45,20 @@ export const checkHealth = async (): Promise<{ status: string; model_loaded: boo
     return result;
   } catch (error) {
     console.error('Health check failed:', error);
+    throw error;
+  }
+};
+
+export const testDatabase = async (): Promise<{ status: string; data?: any }> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/test-db`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Database test failed:', error);
     throw error;
   }
 };
