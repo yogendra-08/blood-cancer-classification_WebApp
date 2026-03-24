@@ -1,0 +1,136 @@
+🚀 DEPLOYMENT GUIDE - Blood Cancer Classifier
+Frontend (Vercel) + Backend (Render) + Model (Hugging Face)
+
+🔹 PART 1: HUGGING FACE MODEL SETUP
+=====================================
+
+📋 CREATE MODEL REPOSITORY:
+1. Go to https://huggingface.co/new
+2. Repository name: blood-cancer-classifier
+3. License: MIT
+4. Make it public
+
+📤 UPLOAD YOUR MODEL:
+1. Train your model locally (best_model.keras)
+2. Go to your repository → Files → Add file
+3. Upload: best_model.keras
+4. Add model card README with details
+
+🔗 GET MODEL URL:
+1. Go to your model repository
+2. Click on best_model.keras file
+3. Copy the "Download" URL
+4. Format: https://huggingface.co/username/repo/resolve/main/best_model.keras
+
+📝 UPDATE BACKEND ENVIRONMENT:
+In Render dashboard → Environment → Add:
+MODEL_URL=https://huggingface.co/username/repo/resolve/main/best_model.keras
+
+🔹 PART 2: BACKEND DEPLOYMENT (RENDER)
+======================================
+
+📋 DEPLOY STEPS:
+1. Go to https://render.com
+2. Connect GitHub → Import your repository
+3. Select: blood-cancer-classification_WebApp
+4. Choose: deploy_setup/backend/ as root directory
+5. Build Command: pip install -r requirements.txt
+6. Start Command: python app.py
+
+⚙️ ENVIRONMENT VARIABLES (Required):
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+FRONTEND_URL=https://your-app.vercel.app
+MODEL_URL=https://huggingface.co/username/repo/resolve/main/best_model.keras
+
+🔹 PART 3: FRONTEND DEPLOYMENT (VERCEL)
+======================================
+
+📋 DEPLOY STEPS:
+1. Go to https://vercel.com
+2. Connect GitHub → Import repository
+3. Build Command: npm run build
+4. Publish Directory: build
+5. Root Directory: frontend
+
+⚙️ ENVIRONMENT VARIABLES (Required):
+REACT_APP_API_URL=https://your-backend.onrender.com
+
+🔹 PART 4: CONNECTION FLOW (CRITICAL)
+======================================
+
+📊 COMPLETE DATA FLOW:
+User Upload → Frontend (Vercel)
+       ↓
+Frontend API Call → Backend (Render)
+       ↓
+Backend Downloads Model → Hugging Face
+       ↓
+Backend Makes Prediction → Returns to Frontend
+       ↓
+Frontend Shows Results → User Downloads PDF
+
+🔹 PART 5: COMMON ERRORS + FIXES
+===================================
+
+❌ ERROR: "Model not loaded"
+FIX: Check MODEL_URL environment variable
+FIX: Verify Hugging Face URL is accessible
+FIX: Check Render logs for download errors
+
+❌ ERROR: "CORS policy failed"
+FIX: Verify FRONTEND_URL matches Vercel URL
+FIX: Check CORS configuration in app.py
+
+❌ ERROR: "Database connection failed"
+FIX: Verify SUPABASE_URL and SUPABASE_ANON_KEY
+FIX: Check Supabase project permissions
+
+❌ ERROR: "PDF generation failed"
+FIX: Check reportlab import and permissions
+FIX: Generate fallback PDF without images
+
+🔹 PART 6: TESTING BEFORE PRODUCTION
+====================================
+
+🧪 TEST BACKEND LOCALLY:
+cd deploy_setup/backend
+python app.py
+curl http://localhost:5000/health
+
+🧪 TEST MODEL LOADING:
+Check console for "✅ Model loaded successfully from Hugging Face"
+
+🧪 TEST API ENDPOINT:
+curl -X POST -F "file=@test_image.jpg" http://localhost:5000/predict
+
+🧪 TEST FRONTEND CONNECTION:
+Start frontend locally with REACT_APP_API_URL=http://localhost:5000
+
+🔹 PART 7: PRODUCTION OPTIMIZATION
+====================================
+
+⚡ PERFORMANCE TIPS:
+- Model loads once on startup
+- Use gunicorn for production
+- Enable caching on Vercel
+- Monitor Render metrics
+
+🔒 SECURITY BEST PRACTICES:
+- Use environment variables for secrets
+- Enable CORS for specific domains
+- Validate file uploads
+- Rate limit API endpoints
+
+🎯 DEPLOYMENT CHECKLIST:
+✅ Model uploaded to Hugging Face
+✅ Backend deployed to Render
+✅ Frontend deployed to Vercel
+✅ Environment variables configured
+✅ CORS properly configured
+✅ Database connection tested
+✅ End-to-end flow tested
+✅ SSL certificates valid
+✅ Monitoring enabled
+
+🎉 SUCCESS: Your Blood Cancer Classifier is now running in production!
