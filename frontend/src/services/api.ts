@@ -1,5 +1,5 @@
 // API base URL - update this to match your server
-export const API_BASE_URL = 'http://localhost:5000';
+export const API_BASE_URL = 'https://blood-cancer-classification-webapp-2.onrender.com';
 
 export interface PredictionResult {
   success: boolean;
