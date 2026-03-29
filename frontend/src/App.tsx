@@ -39,17 +39,29 @@ const AppContent: React.FC = () => {
     setError(null);
   };
 
-  // Register service worker for PWA
+  // Register service worker for PWA (temporarily disabled for debugging)
   React.useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
-        .then((registration) => {
-          console.log('Service Worker registered with scope:', registration.scope);
-        })
-        .catch((error) => {
-          console.log('Service Worker registration failed:', error);
-        });
-    }
+    console.log('Service worker registration skipped for debugging');
+    // if ('serviceWorker' in navigator) {
+    //   navigator.serviceWorker.register('/sw.js')
+    //     .then((registration) => {
+    //       console.log('Service Worker registered with scope:', registration.scope);
+    //     })
+    //     .catch((error) => {
+    //       console.log('Service Worker registration failed:', error);
+    //     });
+    // }
+  }, []);
+
+  // Add error handling for uncaught errors
+  React.useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error('Uncaught error:', event.error);
+      setError(`Application error: ${event.error?.message || 'Unknown error'}`);
+    };
+
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
   }, []);
 
   return (
