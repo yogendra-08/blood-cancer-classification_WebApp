@@ -4,6 +4,16 @@
   publish = "build"
 
 [[redirects]]
+  from = "/api/*"
+  to = "https://blood-cancer-classification-webapp-2.onrender.com/:splat"
+  status = 200
+
+# Handle SPA routing - redirect all non-file requests to index.html
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+  force = false
+
+[build.environment]
+  NODE_VERSION = "16"

@@ -1,0 +1,5 @@
+# API proxy
+/api/*  https://blood-cancer-classification-webapp-2.onrender.com/:splat  200
+
+# SPA routing - handle all other routes
+/*    /index.html   200
