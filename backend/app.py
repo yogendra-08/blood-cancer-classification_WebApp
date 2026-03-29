@@ -1,30 +1,38 @@
 import os
-import numpy as np
+import io
+import uuid
+import base64
+from datetime import datetime
+
 import cv2
+import numpy as np
+import tensorflow as tf
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from tensorflow.keras.preprocessing import image
-from tensorflow.keras.applications.efficientnet import preprocess_input
-from tensorflow.keras.models import load_model
-import tensorflow as tf
-from werkzeug.utils import secure_filename
-import uuid
-from datetime import datetime
-from supabase import create_client, Client
-from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils import ImageReader
-import io
-import base64
-from dotenv import load_dotenv
-import os
-import uuid
+from reportlab.pdfgen import canvas
+from supabase import create_client, Client
+from tensorflow.keras.applications.efficientnet import preprocess_input
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing import image
+from werkzeug.utils import secure_filename
+
+# Resolve paths from this file so deployment does not depend on the current working directory.
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, 'model', 'best_efficientnet.keras')
+MODEL_STATUS_PATH = os.path.join(BASE_DIR, 'model_status.txt')
 
 # Load environment variables
-load_dotenv()
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 # Initialize Flask app
-app = Flask(__name__, static_folder='static', static_url_path='/static')
+app = Flask(
+    __name__,
+    static_folder=os.path.join(BASE_DIR, 'static'),
+    static_url_path='/static'
+)
 
 # Enable CORS for all routes with frontend URL
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
@@ -36,8 +44,8 @@ SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY", "your-anon-key-here")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Configuration
-app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['OUTPUT_FOLDER'] = 'static/outputs'
+app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'uploads')
+app.config['OUTPUT_FOLDER'] = os.path.join(BASE_DIR, 'static', 'outputs')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 # Ensure directories exist
@@ -50,28 +58,34 @@ CLASS_LABELS = ["Benign", "[Malignant] Pre-B", "[Malignant] Pro-B", "[Malignant]
 # Global variable for model
 model = None
 
+
+def ensure_model_loaded():
+    """Load the model on demand for WSGI servers such as Gunicorn/Render."""
+    global model
+    if model is None:
+        load_efficientnet_model()
+    return model is not None
+
 def load_efficientnet_model():
     """Load the pre-trained EfficientNet model"""
     global model
     try:
-        model_path = 'model/best_efficientnet.keras'
-        
         # Write status to file for debugging
-        with open('model_status.txt', 'w') as f:
-            f.write(f"Attempting to load: {model_path}\n")
-            f.write(f"File exists: {os.path.exists(model_path)}\n")
+        with open(MODEL_STATUS_PATH, 'w') as f:
+            f.write(f"Attempting to load: {MODEL_PATH}\n")
+            f.write(f"File exists: {os.path.exists(MODEL_PATH)}\n")
         
-        if os.path.exists(model_path):
+        if os.path.exists(MODEL_PATH):
             try:
-                model = load_model(model_path, compile=False)
+                model = load_model(MODEL_PATH, compile=False)
                 
-                with open('model_status.txt', 'a') as f:
+                with open(MODEL_STATUS_PATH, 'a') as f:
                     f.write("Real model loaded successfully!\n")
                     f.write(f"Model type: {type(model)}\n")
                     f.write(f"Input shape: {model.input_shape}\n")
                     f.write(f"Output shape: {model.output_shape}\n")
             except Exception as e:
-                with open('model_status.txt', 'a') as f:
+                with open(MODEL_STATUS_PATH, 'a') as f:
                     f.write(f"Real model failed: {e}\n")
                     f.write("Using working dummy model instead\n")
                 
@@ -89,7 +103,7 @@ def load_efficientnet_model():
                     tf.keras.layers.Dense(4, activation='softmax')
                 ])
                 
-                with open('model_status.txt', 'a') as f:
+                with open(MODEL_STATUS_PATH, 'a') as f:
                     f.write("Working dummy model created\n")
         else:
             # Create working model
@@ -106,11 +120,11 @@ def load_efficientnet_model():
                 tf.keras.layers.Dense(4, activation='softmax')
             ])
             
-            with open('model_status.txt', 'a') as f:
+            with open(MODEL_STATUS_PATH, 'a') as f:
                 f.write("Using working dummy model (no real model file)\n")
                 
     except Exception as e:
-        with open('model_status.txt', 'a') as f:
+        with open(MODEL_STATUS_PATH, 'a') as f:
             f.write(f"Critical error: {e}\n")
         model = None
 
@@ -410,7 +424,7 @@ def predict():
     """API endpoint for image classification"""
     try:
         # Check if model is loaded
-        if model is None:
+        if not ensure_model_loaded():
             return jsonify({'error': 'Model not loaded. Please check model file.'}), 500
         
         # Check if file is in request
@@ -505,6 +519,8 @@ def health_check():
     return jsonify({
         'status': 'healthy',
         'model_loaded': model is not None,
+        'model_path': MODEL_PATH,
+        'model_file_exists': os.path.exists(MODEL_PATH),
         'timestamp': datetime.now().isoformat()
     })
 
@@ -831,4 +847,4 @@ if __name__ == '__main__':
     print(f"Model loaded: {model is not None}")
     
     # Run on all interfaces for deployment
-    app.run(debug=False, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
