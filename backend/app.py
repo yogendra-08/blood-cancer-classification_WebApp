@@ -66,6 +66,17 @@ def ensure_model_loaded():
         load_efficientnet_model()
     return model is not None
 
+
+def read_model_status():
+    """Return the latest model loader status text when available."""
+    if not os.path.exists(MODEL_STATUS_PATH):
+        return None
+    try:
+        with open(MODEL_STATUS_PATH, 'r', encoding='utf-8') as f:
+            return f.read()
+    except OSError:
+        return None
+
 def load_efficientnet_model():
     """Load the pre-trained EfficientNet model"""
     global model
@@ -516,11 +527,13 @@ def serve_gradcam(filename):
 @app.route('/health')
 def health_check():
     """Health check endpoint"""
+    ensure_model_loaded()
     return jsonify({
         'status': 'healthy',
         'model_loaded': model is not None,
         'model_path': MODEL_PATH,
         'model_file_exists': os.path.exists(MODEL_PATH),
+        'model_status': read_model_status(),
         'timestamp': datetime.now().isoformat()
     })
 
