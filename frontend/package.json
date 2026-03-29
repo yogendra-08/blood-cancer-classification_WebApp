@@ -2,7 +2,6 @@
   "name": "blood-cancer-classifier-frontend",
   "version": "1.0.0",
   "private": true,
-  "homepage": ".",
   "dependencies": {
     "@types/node": "^16.18.68",
     "@types/react": "^18.2.42",
